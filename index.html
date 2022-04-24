@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>着ろ！マヨイくん</title>
+  <style>
+    html {
+      background-color: #388277;
+    }
+    body {
+      margin: 0;
+    }
+  </style>
+
+  <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+  <script>
+    window.addEventListener("load", init);
+
+    function init() {
+      // Stageオブジェクトを作成
+      var stage = new createjs.Stage("game");
+      var width = 1080;
+      var height = 1920;
+
+      // ステータス記憶用
+      var selectedMenu = "none";
+      var selectedContainer;
+      var selectedItemName = {
+        head: "head0",
+        hair: "hair0",
+        cloth: "cloth0",
+        acc: "acc0",
+        hand: "hand0"
+      }
+      var currentPage = {
+        head: 0,
+        hair: 0,
+        cloth: 0,
+        acc: 0,
+        hand: 0
+      }
+      var item_before, item_after;
+
+      // 各カテゴリのアイテム数
+      var itemCount = {
+        head: 4,
+        hair: 7,
+        cloth: 6,
+        acc: 2,
+        hand: 1
+      }
+
+      var maxPage = {
+        head: 0,
+        hair: 0,
+        cloth: 0,
+        acc: 0,
+        hand: 0
+      }
+      for (var key in itemCount) {
+        maxPage[key] = parseInt(itemCount[key] / 10);
+      }
+
+      // リストUI周り
+      var categoryKey = Object.keys(itemCount);
+      var listBody = [];
+      var listMargin = 180;
+      var page = 0;
+
+
+      // ------------------------------------
+      // 画像セッティング
+      // ------------------------------------
+      // UI画像
+      var bgimg = new createjs.Bitmap("image/ui/bg.png");
+      var arrow = new createjs.Bitmap("image/ui/arrow.png");
+      var balloon = new createjs.Bitmap("image/ui/balloon.png");
+      var btnNext = new createjs.Bitmap("image/ui/next.png");
+      var btnBack = new createjs.Bitmap("image/ui/next.png");
+
+      var btnAcc = new createjs.Bitmap("image/ui/btn_acc.png");
+      var btnCloth = new createjs.Bitmap("image/ui/btn_cloth.png");
+      var btnDl = new createjs.Bitmap("image/ui/btn_dl.png");
+      var btnHair = new createjs.Bitmap("image/ui/btn_hair.png");
+      var btnHand = new createjs.Bitmap("image/ui/btn_hand.png");
+      var btnHead = new createjs.Bitmap("image/ui/btn_head.png");
+
+      // キャラ画像
+      var chara = new createjs.Bitmap("image/chara.png");
+
+      // 衣装
+      var clothContainer = new createjs.Container();
+      clothContainer.name = "cloth";
+      for (var i = 0; i < itemCount['cloth']; i++) {
+        var item = new createjs.Bitmap("image/item-cloth/" + i + ".png");
+        item.name = "cloth" + i;
+        item.visible = false;
+        if (item.name == "cloth0") {
+          item.visible = true;
+        }
+        clothContainer.addChild(item);
+      }
+
+      // 後ろ髪
+      var backHairContainer = new createjs.Container();
+      backHairContainer.name = "backHair";
+      for (var i = 0; i < itemCount['hair']; i++) {
+        var item = new createjs.Bitmap("image/item-backhair/" + i + ".png");
+        item.name = "hair" + i;
+        item.visible = false;
+        backHairContainer.addChild(item);
+      }
+
+      // 前髪
+      var hairContainer = new createjs.Container();
+      hairContainer.name = "hair";
+      for (var i = 0; i < itemCount['hair']; i++) {
+        var item = new createjs.Bitmap("image/item-hair/" + i + ".png");
+        item.name = "hair" + i;
+        item.visible = false;
+        if (item.name == "hair0") {
+          item.visible = true;
+        }
+        hairContainer.addChild(item);
+      }
+
+      // アクセ
+      var accContainer = new createjs.Container();
+      accContainer.name = "acc";
+      for (var i = 0; i < itemCount['acc']; i++) {
+        var item = new createjs.Bitmap("image/item-acc/" + i + ".png");
+        item.name = "acc" + i;
+        item.visible = false;
+        accContainer.addChild(item);
+      }
+
+      // 持ち物
+      var handContainer = new createjs.Container();
+      handContainer.name = "hand";
+      for (var i = 0; i < itemCount['hand']; i++) {
+        var item = new createjs.Bitmap("image/item-hand/" + i + ".png");
+        item.name = "hand" + i;
+        item.visible = false;
+        if (item.name == "hand0") {
+          item.visible = true;
+        }
+        handContainer.addChild(item);
+      }
+
+      // 帽子
+      var headContainer = new createjs.Container();
+      headContainer.name = "head";
+      for (var i = 0; i < itemCount['head']; i++) {
+        var item = new createjs.Bitmap("image/item-head/" + i + ".png");
+        item.name = "head" + i;
+        item.visible = false;
+        headContainer.addChild(item);
+      }
+
+      // マスク用シェイプの作成
+      var shapeMask = new createjs.Shape();
+      shapeMask.graphics.beginFill("white").drawRect(83, 1274, 919, 353);
+
+      // UI位置指定
+      btnHead.y = btnHair.y = btnCloth.y = btnAcc.y = btnHand.y = 1673;
+      var spacing = (1080 - 44) / 5;
+      btnHead.x = 22;
+      btnHair.x = 22 + spacing;
+      btnCloth.x = 22 + spacing * 2;
+      btnAcc.x = 22 + spacing * 3;
+      btnHand.x = 22 + spacing * 4;
+
+      btnDl.x = 3;
+      btnDl.y = 3;
+
+      balloon.x = 20;
+      balloon.y = 1245;
+      arrow.x = 110;
+      arrow.y = 1636;
+
+      btnNext.x = 1000;
+      btnNext.y = 1382;
+
+      btnBack.scaleX = -1;
+      btnBack.x = 80;
+      btnBack.y = 1382;
+
+      // アイテムリストのコンテナ
+      var list = new createjs.Container();
+      list.addChild(arrow);
+      list.addChild(balloon);
+      list.addChild(btnNext);
+      list.addChild(btnBack);
+
+      for (var i = 0; i < categoryKey.length; i++) {
+        listBody.push(new createjs.Container());
+        listBody[i].visible = false;
+        listBody[i].x += 104;
+
+        for (var j = 0; j < itemCount[categoryKey[i]]; j++) {
+          var thumb = new createjs.Bitmap("image/thumb/" + categoryKey[i] + j + ".png");
+          thumb.name = categoryKey[i] + j;
+          thumb.addEventListener("click", handleItemClick);
+          page = parseInt(j / 10);
+          thumb.x = listMargin * j + page * 100;
+
+          if (j - page * 10 < 5) {
+            thumb.y = 1285;
+          } else {
+            thumb.x -= listMargin * 5;
+            thumb.y = 1460;
+          }
+          if (page > 0) {
+            thumb.x -= listMargin * 5;
+          }
+          listBody[i].addChild(thumb);
+        }
+        listBody[i].mask = shapeMask;
+        list.addChild(listBody[i]);
+      }
+      list.visible = false;
+
+      // UIのコンテナ
+      var uiContainer = new createjs.Container();
+      uiContainer.addChild(btnHead);
+      uiContainer.addChild(btnHair);
+      uiContainer.addChild(btnCloth);
+      uiContainer.addChild(btnAcc);
+      uiContainer.addChild(btnHand);
+      uiContainer.addChild(list);
+
+
+
+      // ------------------------------------
+      // ステージに追加
+      // ------------------------------------
+      stage.addChild(bgimg);
+
+      stage.addChild(backHairContainer);
+      stage.addChild(chara);
+      stage.addChild(handContainer);
+      stage.addChild(clothContainer);
+      stage.addChild(accContainer);
+      stage.addChild(hairContainer);
+      stage.addChild(headContainer);
+
+      stage.addChild(uiContainer);
+      stage.addChild(btnDl);
+
+      // ------------------------------------
+      // ボタンイベントを追加
+      // ------------------------------------
+      btnHead.addEventListener("click", handleMenuClick);
+      btnHair.addEventListener("click", handleMenuClick);
+      btnCloth.addEventListener("click", handleMenuClick);
+      btnAcc.addEventListener("click", handleMenuClick);
+      btnHand.addEventListener("click", handleMenuClick);
+
+      btnNext.addEventListener("click", handleNextClick);
+      btnBack.addEventListener("click", handleBackClick);
+
+      btnDl.addEventListener("click", handleDlClick);
+
+      // 各ボタンに命名
+      btnHead.name = "head";
+      btnHair.name = "hair";
+      btnCloth.name = "cloth";
+      btnAcc.name = "acc";
+      btnHand.name = "hand";
+
+
+      // ------------------------------------
+      // クリック処理
+      // ------------------------------------
+      // メニューボタンのクリック処理
+      function handleMenuClick(event) {
+        console.log(event.currentTarget.name);
+        for (var i = 0; i < listBody.length; i++) {
+          listBody[i].visible = false;
+        }
+
+        if (selectedMenu == event.currentTarget.name) {
+          selectedMenu = "none";
+          list.visible = false;
+        } else {
+          selectedMenu = event.currentTarget.name;
+          list.visible = true;
+
+          var arrowFirstPos = 110;
+          var arrowMove = 213;
+          switch (event.currentTarget.name) {
+            case "head":
+              arrow.x = arrowFirstPos;
+              listBody[0].visible = true;
+              break;
+            case "hair":
+              arrow.x = arrowFirstPos + arrowMove;
+              listBody[1].visible = true;
+              break;
+            case "cloth":
+              arrow.x = arrowFirstPos + arrowMove * 2
+              listBody[2].visible = true;
+              break;
+            case "acc":
+              arrow.x = arrowFirstPos + arrowMove * 3
+              listBody[3].visible = true;
+              break;
+            case "hand":
+              arrow.x = arrowFirstPos + arrowMove * 4;
+              listBody[4].visible = true;
+              break;
+            default:
+          }
+        }
+      }
+      // アイテムのクリック処理
+      function handleItemClick(event) {
+        if (selectedMenu == "hair") {
+          item_before = backHairContainer.getChildByName(selectedItemName['hair']);
+          item_before.visible = false;
+          item_after = backHairContainer.getChildByName(event.currentTarget.name);
+          item_after.visible = true;
+        }
+        selectedContainer = stage.getChildByName(selectedMenu);
+        item_before = selectedContainer.getChildByName(selectedItemName[selectedMenu]);
+        item_before.visible = false;
+        item_after = selectedContainer.getChildByName(event.currentTarget.name);
+        item_after.visible = true;
+
+        selectedItemName[selectedMenu] = item_after.name;
+      }
+
+      // ページ送りのクリック処理
+      function handleNextClick(event) {
+        currentPage[selectedMenu]++;
+        if (currentPage[selectedMenu] > maxPage[selectedMenu]) {
+          currentPage[selectedMenu] = maxPage[selectedMenu];
+        }
+        updatePage();
+      }
+
+      function handleBackClick(event) {
+        currentPage[selectedMenu]--;
+        if (currentPage[selectedMenu] < 0) {
+          currentPage[selectedMenu] = 0;
+        }
+        updatePage();
+      }
+      // ページ送りのアニメーション
+      function updatePage() {
+        var targetX = -1 * (listMargin * 5 + page * 100) * currentPage[selectedMenu];
+        if (currentPage[selectedMenu] == 0) {
+          targetX += 104;
+        }
+        createjs.Tween.get(listBody[0], {
+          override: true
+        }).to({
+          x: targetX
+        }, 200, createjs.Ease.cubicOut);
+      }
+
+      // DLボタンのクリック処理
+      function handleDlClick(event) {
+        if (uiContainer.visible == true) {
+          uiContainer.visible = false;
+        } else {
+          uiContainer.visible = true;
+        }
+      }
+
+
+      // ------------------------------------
+      // Ticker
+      // ------------------------------------
+      createjs.Ticker.addEventListener("tick", handleTick);
+
+      function handleTick() {
+        if (currentPage[selectedMenu] > maxPage[selectedMenu] - 1) {
+          btnNext.visible = false;
+        } else {
+          btnNext.visible = true;
+        }
+        if (currentPage[selectedMenu] == 0) {
+          btnBack.visible = false;
+        } else {
+          btnBack.visible = true;
+        }
+
+        // Stageの描画を更新
+        stage.update();
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <canvas id="game" width="1080" height="1920"></canvas>
+</body>
+
+</html>
